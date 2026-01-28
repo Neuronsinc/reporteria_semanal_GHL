@@ -1,0 +1,34 @@
+{
+  "name": "bot-bi-python",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon --watch index.js index.js",
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.8",
+    "canvas": "^3.2.0",
+    "express": "^5.1.0",
+    "markdown-it": "^14.1.0",
+    "marked": "^16.1.2",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.12",
+    "nodemon": "^3.0.3",
+    "pdf-image": "^2.0.0",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^1.1.1",
+    "pdf-poppler": "^0.2.3",
+    "pdf2image": "^1.2.3",
+    "pdf2pic": "^3.2.0",
+    "pdfjs-dist": "^5.4.449",
+    "puppeteer": "^22.0.0",
+    "request": "^2.88.2",
+    "sharp": "^0.34.3"
+  }
+}
