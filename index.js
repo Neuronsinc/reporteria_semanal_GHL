@@ -286,7 +286,7 @@ app.post("/scrape", async (req, res) => {
     // 3. Descargar el PDF
     console.log("🌐 Iniciando descarga del PDF...");
     browser = await puppeteer.launch({
-      headless: true,
+      headless: false,
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
@@ -317,7 +317,7 @@ app.post("/scrape", async (req, res) => {
     await page.goto(reporte_url, { waitUntil: "domcontentloaded" });
     console.log("✅ Página cargada");
     
-    await delay(5000);
+    await delay(8000);
 
     // Buscar y hacer clic en el botón de exportar
     console.log("🔍 Buscando botón #export-btn...");
