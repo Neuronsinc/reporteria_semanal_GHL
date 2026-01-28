@@ -15,8 +15,10 @@ app.use("/pdf-images", express.static(PDF_IMAGES_DIR));
 // Importar y usar las rutas
 const scrapeRoutes = require("./routes/scrape-routes");
 const pdfRoutes = require("./routes/pdf-routes");
+const extractHtmlRoutes = require("./routes/extractHtmlRoute"); // Nueva incorporación
 
 app.use("/scrape", scrapeRoutes);
 app.use("/pdf", pdfRoutes);
+app.use("/extract-html", extractHtmlRoutes); // Habilitar la extracción de HTML
 
 module.exports = app;

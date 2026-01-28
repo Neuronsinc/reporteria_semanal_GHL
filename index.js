@@ -12,4 +12,5 @@ app.listen(PORT, () => {
   console.log(`   POST /scrape        - Descargar PDF y convertir a imágenes`);
   console.log(`   POST /pdf/create    - Crear PDF desde Markdown`);
   console.log(`   POST /pdf/edit      - Editar PDF existente`);
+  console.log(`   POST /extract-html  - Extraer HTML relevante`);
 });
