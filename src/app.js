@@ -19,6 +19,6 @@ const extractHtmlRoutes = require("./routes/extractHtmlRoute"); // Nueva incorpo
 
 app.use("/scrape", scrapeRoutes);
 app.use("/pdf", pdfRoutes);
-app.use("/extract-html", extractHtmlRoutes); // Habilitar la extracción de HTML
+app.use("/extract-html", extractHtmlRoutes);
 
 module.exports = app;

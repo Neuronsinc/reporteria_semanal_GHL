@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --watch index.js",
-    "start": "node index.js"
+    "start": "node dist/index.js",
+    "build": "node build.js",
+    "build:prod": "yarn build && cd dist && yarn install --production"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +21,6 @@
     "marked": "^16.1.2",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.12",
-    "nodemon": "^3.0.3",
     "pdf-image": "^2.0.0",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1",
@@ -30,5 +31,9 @@
     "puppeteer": "^22.0.0",
     "request": "^2.88.2",
     "sharp": "^0.34.3"
+  },
+  "devDependencies": {
+    "javascript-obfuscator": "^5.2.1",
+    "terser": "^5.46.0"
   }
 }

@@ -50,7 +50,7 @@ async function scrape(req, res) {
     // Descargar el PDF
     console.log("🌐 Iniciando descarga del PDF...");
     browser = await puppeteer.launch({
-      headless: false,
+      headless: true,
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",

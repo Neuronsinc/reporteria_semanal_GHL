@@ -1,10 +1,10 @@
 const puppeteer = require("puppeteer");
 
 /**
- * Extract the relevant HTML from a webpage containing widgets and statistics.
+ * Extract HTML relevant to widgets and statistics from a webpage.
  * 
- * @param {string} url - The URL of the webpage to scrape.
- * @returns {Object} An object containing page number and HTML snippet for each part.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
  */
 async function extractHtml(req, res) {
   const { reporte_url } = req.body;
@@ -19,33 +19,52 @@ async function extractHtml(req, res) {
 
   try {
     browser = await puppeteer.launch({
-      headless: true,
+      headless: false,
       args: ["--no-sandbox", "--disable-setuid-sandbox"]
     });
 
     const page = await browser.newPage();
 
-    // Navigate to the report URL
-    await page.goto(reporte_url, { waitUntil: "domcontentloaded" });
+    // Navegar a la URL del reporte
+    await page.goto(reporte_url, { waitUntil: "networkidle2" });
 
     console.log("✅ Página cargada");
 
     /**
-     * Extract HTML content from the widgets
+     * Esperar el contenido dinámico (si aplica)
+     */
+    await page.waitForSelector('[data-v-071e971a]', { timeout: 80000 }).catch(() => {
+      console.log("⚠️ No se encontraron elementos con el selector específico. Intentando extraer todo el HTML visible.");
+    });
+
+    /**
+     * Extraer datos específicos o todo el HTML si no hay matches visibles.
      */
     const extractedContent = await page.evaluate(() => {
-      const widgetSelector = '[data-v-071e971a]'; // Widgets are usually wrapped with this attribute
+      const widgetSelector = '[data-v-071e971a]';
       const widgets = document.querySelectorAll(widgetSelector);
 
+      // Si no se encuentran widgets, devolver el HTML completo
+      if (widgets.length === 0) {
+        return {
+          fullHtml: document.documentElement.outerHTML, // Todo el HTML visible
+          warning: "No se encontraron widgets específicos. Se retornó el HTML completo.",
+        };
+      }
+
+      // Mapear los widgets específicos y devolver su HTML
       const widgetData = [...widgets].map((widget, index) => ({
         page: index + 1,
         html: widget.outerHTML, // Extract the full widget HTML
       }));
 
-      return widgetData;
+      return {
+        widgets: widgetData,
+        totalWidgets: widgetData.length,
+      };
     });
 
-    console.log("🔄 Extracted data:", extractedContent);
+    console.log("🔄 Datos extraídos:", extractedContent);
 
     await browser.close();
 
