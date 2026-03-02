@@ -22,11 +22,24 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Ejecutar Build
-        # Esto genera la carpeta dist/ localmente en el corredor de GitHub
         run: node build.js 
 
       - name: Asegurar package.json en dist
         run: cp package.json dist/package.json
+
+      - name: Preparar archivos (Limpieza Inteligente)
+        # Aquí borramos todo lo que NO debe subirse al servidor.
+        # Al borrarlos aquí, el paso de SCP ya no los verá y no intentará subirlos.
+        run: |
+          rm -rf .git
+          rm -rf .github
+          rm -rf node_modules
+          rm -rf .chrome-data
+          rm -rf pdf-images
+          rm -rf public-reports
+          rm -rf reportes
+          rm -rf .gitignore
+          rm -rf .gitattributes
 
       - name: Desplegar TODO al servidor
         uses: appleboy/scp-action@master
@@ -35,23 +48,12 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: 22
-          source: "./*" 
+          # Subimos la raíz completa (que ya está limpia de carpetas pesadas)
+          source: "./" 
           target: "/www/wwwroot/scraper-n8n"
           overwrite: true
-          # EXCLUIR carpetas innecesarias y problemáticas
-          rm: false
           strip_components: 0
           tar_tmp_path: "/tmp"
-          # Agregamos el filtro de exclusión:
-          filter: |
-            ! .git/
-            ! node_modules/
-            ! .github/
-            ! .chrome-data/
-            ! .dist/
-            ! .pdf-images/
-            ! .publicl-reports/
-            ! .reportes/
 
       - name: Post-Despliegue
         uses: appleboy/ssh-action@master
@@ -62,9 +64,10 @@ jobs:
           port: 22
           script: |
             cd /www/wwwroot/scraper-n8n
+            # Instalamos dependencias solo de producción
             yarn install --production
-            # Crea los logs si no existen para que PM2 no de error
-            mkdir -p logs
-            # Inicia o reinicia usando el archivo de configuración
+            # Creamos las carpetas de trabajo si no existen (sin borrar el contenido que ya hay en el servidor)
+            mkdir -p logs reportes public-reports pdf-images .chrome-data
+            # Reiniciamos la instancia
             pm2 startOrRestart ecosystem.config.js
             pm2 save
