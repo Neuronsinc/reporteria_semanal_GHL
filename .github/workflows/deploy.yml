@@ -35,10 +35,23 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: 22
-          # source: "." sube TODO el contenido del repo, incluyendo la carpeta dist/ recién creada
-          source: "." 
+          source: "./*" 
           target: "/www/wwwroot/scraper-n8n"
           overwrite: true
+          # EXCLUIR carpetas innecesarias y problemáticas
+          rm: false
+          strip_components: 0
+          tar_tmp_path: "/tmp"
+          # Agregamos el filtro de exclusión:
+          filter: |
+            ! .git/
+            ! node_modules/
+            ! .github/
+            ! .chrome-data/
+            ! .dist/
+            ! .pdf-images/
+            ! .publicl-reports/
+            ! .reportes/
 
       - name: Post-Despliegue
         uses: appleboy/ssh-action@master
