@@ -37,7 +37,7 @@ jobs:
           port: 22
           source: "dist/*"
           target: "/www/wwwroot/scraper-n8n"
-          strip_components: 1
+          strip_components: 0
           overwrite: true # Esto sobrescribe los archivos existentes
 
       - name: Post-Despliegue
