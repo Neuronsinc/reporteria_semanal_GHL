@@ -24,38 +24,34 @@ jobs:
       - name: Ejecutar Build
         run: node build.js 
 
-      - name: Asegurar package.json en dist
-        run: cp package.json dist/package.json
+      - name: Preparar limpieza pre-vuelo
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          script: |
+            # 1. Detener el bot para liberar archivos bloqueados
+            pm2 stop scraper-n8n || true
+            # 2. Limpiar archivos viejos PERO mantener las carpetas de datos
+            cd /www/wwwroot/scraper-n8n
+            find . -maxdepth 1 ! -name 'reportes' ! -name 'public-reports' ! -name 'pdf-images' ! -name '.chrome-data' ! -name 'logs' ! -name '.' -exec rm -rf {} +
 
-      - name: Preparar archivos (Limpieza Inteligente)
-        # Aquí borramos todo lo que NO debe subirse al servidor.
-        # Al borrarlos aquí, el paso de SCP ya no los verá y no intentará subirlos.
-        run: |
-          rm -rf .git
-          rm -rf .github
-          rm -rf node_modules
-          rm -rf .chrome-data
-          rm -rf pdf-images
-          rm -rf public-reports
-          rm -rf reportes
-          rm -rf .gitignore
-          rm -rf .gitattributes
-
-      - name: Desplegar TODO al servidor
+      - name: Desplegar archivos limpios
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: 22
-          # Subimos la raíz completa (que ya está limpia de carpetas pesadas)
-          source: "./" 
+          # Subimos solo lo esencial para que no haya basura de .git
+          source: "src/,dist/,index.js,package.json,ecosystem.config.js,yarn.lock,build.js"
           target: "/www/wwwroot/scraper-n8n"
           overwrite: true
           strip_components: 0
-          tar_tmp_path: "/tmp"
 
-      - name: Post-Despliegue
+      - name: Post-Despliegue y Arranque
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -64,10 +60,9 @@ jobs:
           port: 22
           script: |
             cd /www/wwwroot/scraper-n8n
-            # Instalamos dependencias solo de producción
             yarn install --production
-            # Creamos las carpetas de trabajo si no existen (sin borrar el contenido que ya hay en el servidor)
-            mkdir -p logs reportes public-reports pdf-images .chrome-data
-            # Reiniciamos la instancia
+            # Asegurar carpetas de trabajo
+            mkdir -p logs reportes public-reports pdf-images
+            # Iniciar de nuevo
             pm2 startOrRestart ecosystem.config.js
             pm2 save
