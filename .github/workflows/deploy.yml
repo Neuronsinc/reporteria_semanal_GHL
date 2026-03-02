@@ -22,6 +22,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Ejecutar Build
+        # Esto genera la carpeta dist/ localmente en el corredor de GitHub
         run: node build.js 
 
       - name: Asegurar package.json en dist
@@ -34,12 +35,12 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: 22
-          # Subimos TODO el proyecto + la carpeta dist generada
-          source: "./*" 
+          # source: "." sube TODO el contenido del repo, incluyendo la carpeta dist/ recién creada
+          source: "." 
           target: "/www/wwwroot/scraper-n8n"
           overwrite: true
 
-      - name: Post-Despliegue (Instalar y Levantar PM2)
+      - name: Post-Despliegue
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -49,6 +50,8 @@ jobs:
           script: |
             cd /www/wwwroot/scraper-n8n
             yarn install --production
-            # Forzamos a PM2 a usar el archivo de configuración del proyecto
+            # Crea los logs si no existen para que PM2 no de error
+            mkdir -p logs
+            # Inicia o reinicia usando el archivo de configuración
             pm2 startOrRestart ecosystem.config.js
             pm2 save
