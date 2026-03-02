@@ -25,22 +25,21 @@ jobs:
         run: node build.js 
 
       - name: Asegurar package.json en dist
-        # Si el build.js falló al moverlo, esto lo asegura
         run: cp package.json dist/package.json
 
-      - name: Desplegar archivos al servidor
+      - name: Desplegar TODO al servidor
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: 22
-          source: "dist/*"
+          # Subimos TODO el proyecto + la carpeta dist generada
+          source: "./*" 
           target: "/www/wwwroot/scraper-n8n"
-          strip_components: 0
-          overwrite: true # Esto sobrescribe los archivos existentes
+          overwrite: true
 
-      - name: Post-Despliegue
+      - name: Post-Despliegue (Instalar y Levantar PM2)
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -50,6 +49,6 @@ jobs:
           script: |
             cd /www/wwwroot/scraper-n8n
             yarn install --production
-            # Usamos startOrRestart para que funcione si no existe o si ya existe
-            pm2 startOrRestart ecosystem.config.js || pm2 restart scraper-n8n || pm2 start dist/index.js --name "scraper-n8n"
+            # Forzamos a PM2 a usar el archivo de configuración del proyecto
+            pm2 startOrRestart ecosystem.config.js
             pm2 save
