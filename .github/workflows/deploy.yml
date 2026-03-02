@@ -18,40 +18,33 @@ jobs:
           node-version: '20'
           cache: 'yarn'
 
-      - name: Instalar dependencias
+      - name: Instalar dependencias locales
         run: yarn install --frozen-lockfile
 
-      - name: Ejecutar Build
+      - name: Ejecutar Build (Generar Dist)
         run: node build.js 
 
-      - name: Preparar limpieza pre-vuelo
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: 22
-          script: |
-            # 1. Detener el bot para liberar archivos bloqueados
-            pm2 stop scraper-n8n || true
-            # 2. Limpiar archivos viejos PERO mantener las carpetas de datos
-            cd /www/wwwroot/scraper-n8n
-            find . -maxdepth 1 ! -name 'reportes' ! -name 'public-reports' ! -name 'pdf-images' ! -name '.chrome-data' ! -name 'logs' ! -name '.' -exec rm -rf {} +
+      - name: Asegurar package.json en dist
+        run: cp package.json dist/package.json
 
-      - name: Desplegar archivos limpios
+      - name: Preparar paquete de subida
+        # Borramos basura de Git y carpetas pesadas antes de subir
+        run: |
+          rm -rf .git .github node_modules .chrome-data pdf-images public-reports reportes .gitignore .gitattributes
+
+      - name: Desplegar archivos al servidor
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: 22
-          # Subimos solo lo esencial para que no haya basura de .git
-          source: "src/,dist/,index.js,package.json,ecosystem.config.js,yarn.lock,build.js"
+          source: "./" 
           target: "/www/wwwroot/scraper-n8n"
           overwrite: true
           strip_components: 0
 
-      - name: Post-Despliegue y Arranque
+      - name: Post-Despliegue (Ejecutar como ROOT)
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -60,9 +53,18 @@ jobs:
           port: 22
           script: |
             cd /www/wwwroot/scraper-n8n
-            yarn install --production
+            
+            # Cambiar dueño a root para que tú lo veas en tu terminal
+            sudo chown -R root:root /www/wwwroot/scraper-n8n
+            
+            # Instalar dependencias de producción
+            sudo yarn install --production
+            
             # Asegurar carpetas de trabajo
-            mkdir -p logs reportes public-reports pdf-images
-            # Iniciar de nuevo
-            pm2 startOrRestart ecosystem.config.js
-            pm2 save
+            sudo mkdir -p logs reportes public-reports pdf-images .chrome-data
+            
+            # Gestionar PM2 como ROOT
+            # Esto NO toca a 'scraper-n8n-DANIA' porque vamos por nombre específico
+            sudo pm2 delete scraper-n8n || true
+            sudo pm2 start ecosystem.config.js
+            sudo pm2 save
