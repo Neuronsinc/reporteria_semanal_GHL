@@ -1,0 +1,51 @@
+name: Deploy Scraper n8n
+
+on:
+  push:
+    branches: [ main ] # Se activará cada vez que hagas push a main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+
+      - name: Instalar dependencias de desarrollo
+        run: yarn install --frozen-lockfile
+
+      - name: Ejecutar Build (Ofuscación y Minificación)
+        # Esto usa tu archivo build.js para procesar el código
+        run: node build.js 
+
+      - name: Desplegar archivos al servidor
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          # Subimos la carpeta dist y el package.json optimizado que genera tu script
+          source: "dist/*,package.json" 
+          target: "/www/wwwroot/scraper-n8n"
+          strip_components: 1
+
+      - name: Post-Despliegue (Production Install & PM2 Restart)
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          script: |
+            cd /www/wwwroot/scraper-n8n
+            yarn install --production
+            pm2 startOrRestart ecosystem.config.js
+            pm2 save
