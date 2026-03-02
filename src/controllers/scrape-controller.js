@@ -12,9 +12,9 @@ async function scrape(req, res) {
   // Si ya hay un proceso, rechaza los nuevos para proteger el CPU
   if (isBusy) {
     console.log("⚠️ SERVIDOR OCUPADO: Rechazando petición para evitar saturación.");
-    return res.status(429).json({ 
-      success: false, 
-      error: "Servidor procesando otro PDF. Intenta en 1 minuto." 
+    return res.status(429).json({
+      success: false,
+      error: "Servidor procesando otro PDF. Intenta en 1 minuto."
     });
   }
 
@@ -36,13 +36,16 @@ async function scrape(req, res) {
       .forEach(f => fs.unlinkSync(path.join(REPORTS_DIR, f)));
 
     browser = await puppeteer.launch({
-      headless: true,
+      headless: "new", // Usa el nuevo modo headless más estable
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage",
-        "--single-process", // Crítico para 1 núcleo
-        "--no-zygote"
+        "--single-process",
+        "--no-zygote",
+        "--disable-gpu",
+        "--window-size=1920,1080", // Fuerza un tamaño de pantalla de escritorio
+        "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" // Imita a un usuario real
       ],
     });
 
@@ -62,7 +65,7 @@ async function scrape(req, res) {
 
     // Tiempo para que el navegador termine de escribir el archivo en disco
     console.log("⏳ Descargando...");
-    await delay(25000); 
+    await delay(25000);
 
     await browser.close();
     console.log("✅ Navegador cerrado.");
